@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\File;
 class PageService
 {
 
+    /**
+     * @param  \App\Models\Page  $page
+     * @param  \App\Http\Requests\PageUpdateRequest  $request
+     *
+     * @return \App\Models\Page
+     */
     public function update(Page $page, PageUpdateRequest $request)
     {
         $page->fill($request->validated());
@@ -23,10 +29,20 @@ class PageService
         return $page;
     }
 
+    /**
+     * @param  \App\Models\Page  $page
+     *
+     * @return \App\Models\Page
+     * @throws \Throwable
+     */
     public function publish(Page $page)
     {
         try {
             DB::beginTransaction();
+
+            if ($page->content === null) {
+                throw new \Exception('Page content should not be null.', 400);
+            }
 
             $page->published = true;
             $page->save();
