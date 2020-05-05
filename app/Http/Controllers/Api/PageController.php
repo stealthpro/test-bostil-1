@@ -125,7 +125,6 @@ class PageController extends Controller
      *
      * @param  \App\Http\Requests\PageUpdateRequest  $request
      * @param  \App\Models\Page  $page
-     *
      * @param  \App\Services\PageService  $service
      *
      * @return \App\Http\Resources\PageResource
@@ -167,12 +166,18 @@ class PageController extends Controller
      *     tags={"Pages"},
      *     description="Публикация записи",
      *     @OA\Parameter(name="page_id", in="path", @OA\Schema(type="integer"), description="ID записи"),
-     *     @OA\Response(response="204", description="Запись успешно удалена"),
+     *     @OA\Response(response="200", description="Запись успешно опубликована",
+     *         @OA\JsonContent(type="object",
+     *             @OA\Property(property="data", ref="#/components/schemas/PageResource"),
+     *         ),
+     *     ),
      * )
      *
      * @param $id
+     * @param  \App\Services\PageService  $service
      *
      * @return \App\Http\Resources\PageResource
+     * @throws \Throwable
      */
     public function publish($id, PageService $service)
     {
