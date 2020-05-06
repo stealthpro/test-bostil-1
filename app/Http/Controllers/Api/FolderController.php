@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Filters\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FolderRequest;
 use App\Http\Resources\FolderResource;
@@ -31,17 +32,15 @@ class FolderController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      *
+     * @param  \App\Filters\Filters  $filters
+     *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request)
+    public function index(Request $request, Filters $filters)
     {
         $query = Folder::query();
 
-        if ($request->get('sort') === 'desc') {
-            $query->orderByDesc('title');
-        } else {
-            $query->orderBy('title');
-        }
+        $filters->orderBy($query, 'title', $request->get('sort'));
 
         $perPage = $request->get('per_page') ?? 10;
 

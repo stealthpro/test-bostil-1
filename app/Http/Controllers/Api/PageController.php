@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Filters\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PageCreateRequest;
 use App\Http\Requests\PageUpdateRequest;
@@ -10,8 +11,6 @@ use App\Http\Resources\PageResource;
 use App\Models\Page;
 use App\Services\PageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 
 class PageController extends Controller
 {
@@ -36,17 +35,15 @@ class PageController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      *
+     * @param  \App\Filters\Filters  $filters
+     *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request)
+    public function index(Request $request, Filters $filters)
     {
         $query = Page::query();
 
-        if ($request->get('sort') === 'desc') {
-            $query->orderByDesc('title');
-        } else {
-            $query->orderBy('title');
-        }
+        $filters->orderBy($query, 'title', $request->get('sort'));
 
         $perPage = $request->get('per_page') ?? 10;
 
