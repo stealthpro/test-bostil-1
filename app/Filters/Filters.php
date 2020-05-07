@@ -6,22 +6,34 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Filters
 {
+    private Builder $query;
 
     /**
      * @param  \Illuminate\Database\Eloquent\Builder  $query
+     *
+     * @return $this
+     */
+    public function setQuery(Builder $query)
+    {
+        $this->query = $query;
+
+        return $this;
+    }
+
+    /**
      * @param  string  $column
      * @param  string|null  $direction
      *
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return $this
      */
-    public function orderBy(Builder $query, string $column, ?string $direction = 'asc')
+    public function orderBy(string $column, ?string $direction)
     {
         if ($direction === 'desc') {
-            $query->orderByDesc($column);
+            $this->query->orderByDesc($column);
         } else {
-            $query->orderBy($column);
+            $this->query->orderBy($column);
         }
 
-        return $query;
+        return $this;
     }
 }

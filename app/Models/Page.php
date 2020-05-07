@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\FileService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\File;
 
 class Page extends Model
 {
@@ -12,7 +12,8 @@ class Page extends Model
     protected $fillable = ['title', 'content', 'published', 'folder_id'];
 
     protected $casts = [
-        'published' => 'boolean'
+        'published' => 'boolean',
+        'folder_id' => 'integer'
     ];
 
     public function folder()
@@ -36,9 +37,7 @@ class Page extends Model
         parent::boot();
 
         self::deleted(function (self $page) {
-            $path = config('pages.path');
-
-            File::delete("$path/{$page->id}.html");
+            (new FileService())->deletePage($page);
         });
     }
 

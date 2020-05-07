@@ -1,5 +1,6 @@
 <?php
 
 return [
-    'path' => public_path('storage/output'),
+    'path' => 'output',
+    'disk' => 'public',
 ];

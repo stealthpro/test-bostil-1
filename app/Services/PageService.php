@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Http\Requests\PageUpdateRequest;
 use App\Models\Page;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 
 class PageService
 {
@@ -38,22 +37,17 @@ class PageService
     public function publish(Page $page)
     {
         try {
-            DB::beginTransaction();
-
             if ($page->content === null) {
                 throw new \Exception('Page content should not be null.', 400);
             }
 
-            $page->published = true;
-            $page->save();
+            DB::beginTransaction();
 
-            $path = config('pages.path');
+            $page->update(['published' => true]);
 
-            if(!File::isDirectory($path)){
-                File::makeDirectory($path, 0777, true, true);
+            if ($page->published) {
+                (new FileService)->storePage($page);
             }
-
-            File::put("$path/{$page->id}.html", $page->content);
 
             DB::commit();
         } catch (\Throwable $exception) {

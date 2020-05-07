@@ -43,7 +43,8 @@ class PageController extends Controller
     {
         $query = Page::query();
 
-        $filters->orderBy($query, 'title', $request->get('sort'));
+        $filters->setQuery($query)
+            ->orderBy('title', $request->get('sort'));
 
         $perPage = $request->get('per_page') ?? 10;
 

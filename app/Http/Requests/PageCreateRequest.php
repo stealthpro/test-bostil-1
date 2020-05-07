@@ -21,7 +21,7 @@ class PageCreateRequest extends FormRequest
      *     schema="PageCreateRequest",
      *     type="object",
      *     @OA\Property(property="title", type="string", description="Название"),
-     *     @OA\Property(property="folder_id", type="string", description="ID папки"),
+     *     @OA\Property(property="folder_id", type="integer", description="ID папки"),
      * )
      */
     public function rules()
