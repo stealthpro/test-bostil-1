@@ -13,9 +13,6 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        Artisan::call('db:seed --class=FolderSeeder');
-        Artisan::call('db:seed --class=PageSeeder');
     }
 
 }

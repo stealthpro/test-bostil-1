@@ -35,7 +35,7 @@ class FileService
             throw new \Exception("Output folder not created.", 400);
         }
 
-        return Storage::disk($disk)->put("$path/{$page->id}.html", $page->content);
+        return Storage::disk($disk)->put($page->file_path, $page->content);
     }
 
     /**
@@ -45,8 +45,6 @@ class FileService
      */
     public function deletePage($page): bool
     {
-        $config = config('pages');
-
-        return Storage::disk($config['disk'])->delete("{$config['path']}/{$page->id}.html");
+        return Storage::disk(config('pages.disk'))->delete($page->file_path);
     }
 }

@@ -16,6 +16,16 @@ class Page extends Model
         'folder_id' => 'integer'
     ];
 
+    public function getFileNameAttribute()
+    {
+        return "{$this->id}.html";
+    }
+
+    public function getFilePathAttribute()
+    {
+        return config('pages.path')."/{$this->file_name}";
+    }
+
     public function folder()
     {
         return $this->belongsTo(Folder::class);

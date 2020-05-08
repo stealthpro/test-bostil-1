@@ -11,50 +11,52 @@ use Tests\TestCase;
 
 class FileServiceTest extends TestCase
 {
+    use RefreshDatabase;
     use WithFaker;
+
+    protected string $pagesDisk;
+    protected string $pagesPath;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->pagesDisk = config('pages.disk');
+        $this->pagesPath = config('pages.path');
+        Storage::fake($this->pagesDisk);
+    }
 
     public function testCheckDirectory()
     {
-        $disk = config('pages.disk');
-        $path = config('pages.path');
-
-        Storage::fake($disk);
-
         $service = new FileService;
 
-        $this->assertTrue($service->checkDirectory($path));
+        $this->assertTrue($service->checkDirectory($this->pagesPath, $this->pagesDisk));
     }
 
     public function testStorePage()
     {
-        $disk = config('pages.disk');
-
-        Storage::fake($disk);
-
         $page = factory(Page::class)->create();
 
         $service = new FileService;
 
         try {
             $this->assertTrue($service->storePage($page));
+            Storage::disk($this->pagesDisk)->assertExists($page->file_path);
         } catch (\Throwable $exception) {
-            $this->assertEquals(new \Exception("Output folder not created.", 400), $exception);
+            $this->assertEquals(400, $exception->getCode());
         }
     }
 
     public function testDeletePage()
     {
-        $disk = config('pages.disk');
-        $path = config('pages.path');
-
-        Storage::fake($disk);
-
         $page = factory(Page::class)->create();
 
-        Storage::fake($disk)->put("$path/{$page->id}.html", $page->content);
+        Storage::disk($this->pagesDisk)->put($page->file_path, $page->content);
+        Storage::disk($this->pagesDisk)->assertExists($page->file_path);
 
         $service = new FileService;
 
         self::assertTrue($service->deletePage($page));
+        Storage::disk($this->pagesDisk)->assertMissing($page->file_path);
     }
 }

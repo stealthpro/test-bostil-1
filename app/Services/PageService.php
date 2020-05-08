@@ -11,13 +11,13 @@ class PageService
 
     /**
      * @param  \App\Models\Page  $page
-     * @param  \App\Http\Requests\PageUpdateRequest  $request
+     * @param  array  $data
      *
      * @return \App\Models\Page
      */
-    public function update(Page $page, PageUpdateRequest $request)
+    public function update(Page $page, array $data): Page
     {
-        $page->fill($request->validated());
+        $page->fill($data);
 
         if ($page->isDirty('content')) {
             $page->published = false;

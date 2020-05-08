@@ -17,9 +17,19 @@ class PageControllerTest extends TestCase
     use RefreshDatabase;
     use WithFaker;
 
+    protected string $pagesDisk;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->pagesDisk = config('pages.disk');
+        Storage::fake($this->pagesDisk);
+    }
+
     public function testGetAll()
     {
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class, 20)->create();
         $pages = factory(Page::class, 40)->create();
 
         $params = [
@@ -42,7 +52,7 @@ class PageControllerTest extends TestCase
 
     public function testCreatePage()
     {
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
 
         $payload = [
             'title' => $this->faker->unique()->words(random_int(2, 3), true),
@@ -60,7 +70,7 @@ class PageControllerTest extends TestCase
 
     public function testShowPage()
     {
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
         $page = factory(Page::class)->create();
 
         $response = $this->get(route('pages.show', [$page->id]));
@@ -71,7 +81,7 @@ class PageControllerTest extends TestCase
 
     public function testUpdatePage()
     {
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
         $page = factory(Page::class)->create();
 
         $payload = [
@@ -103,9 +113,7 @@ class PageControllerTest extends TestCase
 
     public function testPublishPage()
     {
-        Storage::fake('public');
-
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
         $page = factory(Page::class)->create();
 
         $response = $this->post(route('pages.publish', [$page->id]));
@@ -114,13 +122,12 @@ class PageControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonResource(PageResource::make($page));
+        Storage::disk($this->pagesDisk)->assertExists($page->file_path);
     }
 
     public function testPublishPageAlreadyPublished()
     {
-        Storage::fake('public');
-
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
         $page = factory(Page::class)->create([
             'published' => true
         ]);
@@ -132,9 +139,7 @@ class PageControllerTest extends TestCase
 
     public function testPublishPageWithoutContent()
     {
-        Storage::fake('public');
-
-        $folders = factory(Folder::class, 20)->create();
+        factory(Folder::class)->create();
         $page = factory(Page::class)->create(['content' => null]);
 
         $response = $this->post(route('pages.publish', [$page->id]));

@@ -11,50 +11,61 @@ use Tests\TestCase;
 
 class PageServiceTest extends TestCase
 {
+    use RefreshDatabase;
     use WithFaker;
 
-    public function testUpdateWithChangeContent()
+    protected string $pagesDisk;
+
+    protected function setUp(): void
     {
-        $page = factory(Page::class)->create();
+        parent::setUp();
 
-        $page->fill([
-            'content' => $this->faker->unique()->randomHtml()
-        ]);
-
-        $this->assertTrue($page->isDirty('content'));
-
-        $page->published = false;
-
-        $this->assertTrue($page->save());
-        $this->assertFalse($page->published);
+        $this->pagesDisk = config('pages.disk');
+        Storage::fake($this->pagesDisk);
     }
 
-    public function testPublishWithNullContent()
+    public function testUpdate()
     {
-        Storage::fake('public');
-
-        $page = factory(Page::class)->create();
-        $page->update([
-            'content' => null,
-            'published' => false,
+        $page = factory(Page::class)->create([
+            'content' => 'text',
+            'published' => true
         ]);
+
+        $data = [
+            'title' => $page->title,
+            'content' => $page->content,
+            'folder_id' => $page->folder_id,
+        ];
 
         $service = new PageService();
 
-        try {
-            $result = $service->publish($page);
+        $service->update($page, $data);
 
-            $this->assertFalse($result instanceof Page);
-        } catch (\Throwable $exception) {
-            $this->assertEquals(new \Exception('Page content should not be null.', 400), $exception);
-            $this->assertFalse($page->published);
-        }
+        $this->assertTrue($page->published);
     }
 
-    public function testPublishWithContent()
+    public function testUpdateWithChangeContent()
     {
-        Storage::fake('public');
+        $page = factory(Page::class)->create([
+            'content' => 'text',
+            'published' => true
+        ]);
 
+        $data = [
+            'title' => $page->title,
+            'content' => 'new text',
+            'folder_id' => $page->folder_id,
+        ];
+
+        $service = new PageService();
+
+        $service->update($page, $data);
+
+        $this->assertFalse($page->published);
+    }
+
+    public function testPublish()
+    {
         $page = factory(Page::class)->create();
 
         $service = new PageService();
@@ -64,8 +75,28 @@ class PageServiceTest extends TestCase
 
             $this->assertEquals($page, $result);
             $this->assertTrue($page->published);
+            Storage::disk($this->pagesDisk)->assertExists($page->file_path);
         } catch (\Throwable $exception) {
             $this->assertFalse($exception);
+        }
+    }
+
+    public function testPublishWithNullContent()
+    {
+        $page = factory(Page::class)->create([
+            'content' => null,
+            'published' => false,
+        ]);
+
+        $service = new PageService();
+
+        try {
+            $result = $service->publish($page);
+
+            $this->assertFalse($result);
+        } catch (\Throwable $exception) {
+            $this->assertEquals(400, $exception->getCode());
+            $this->assertFalse($page->published);
         }
     }
 }

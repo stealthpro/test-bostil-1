@@ -132,7 +132,7 @@ class PageController extends Controller
         Page $page,
         PageService $service
     ) {
-        $service->update($page, $request);
+        $service->update($page, $request->validated());
 
         return new PageResource($page);
     }
