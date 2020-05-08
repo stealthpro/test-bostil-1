@@ -11,6 +11,7 @@ use Tests\TestCase;
 
 class FolderControllerTest extends TestCase
 {
+    use RefreshDatabase;
     use WithFaker;
 
     public function testGetAll()
@@ -23,12 +24,7 @@ class FolderControllerTest extends TestCase
             'sort' => 'desc'
         ];
 
-        $queryString = implode(
-            '&',
-            array_map(fn($k, $v) => "$k=$v", array_keys($params), array_values($params))
-        );
-
-        $response = $this->get("/api/folders?$queryString");
+        $response = $this->get(route('folders.index', $params));
 
         $response->assertStatus(200);
 
@@ -37,7 +33,7 @@ class FolderControllerTest extends TestCase
             ->all();
 
         foreach ($responseFolder as $folder) {
-            $response->assertJsonFragment(FolderResource::make($folder)->jsonSerialize());
+            $response->assertJsonResourceFragment(FolderResource::make($folder));
         }
     }
 
@@ -47,19 +43,23 @@ class FolderControllerTest extends TestCase
             'title' => $this->faker->unique()->words(random_int(1, 2), true)
         ];
 
-        $response = $this->post('/api/folders', $payload);
+        $response = $this->post(route('folders.store'), $payload);
+
+        $folder = Folder::query()->firstWhere($payload);
+        $this->assertNotNull($folder);
 
         $response->assertStatus(201);
+        $response->assertJsonResource(FolderResource::make($folder));
     }
 
     public function testShowFolder()
     {
         $folder = factory(Folder::class)->create();
 
-        $response = $this->get("/api/folders/{$folder->id}");
+        $response = $this->get(route('folders.show', [$folder->id]));
 
         $response->assertStatus(200);
-        $response->assertJsonFragment(FolderResource::make($folder)->jsonSerialize());
+        $response->assertJsonResource(FolderResource::make($folder));
     }
 
     public function testUpdateFolder()
@@ -70,20 +70,20 @@ class FolderControllerTest extends TestCase
             'title' => $this->faker->unique()->words(random_int(1, 2), true),
         ];
 
-        $response = $this->put('/api/folders/' . $folder->id, $payload);
+        $response = $this->put(route('folders.update', [$folder->id]), $payload);
 
         $response->assertStatus(200);
 
         $folder->fill($payload);
         $folder->updated_at = $response->json('data.updated_at');
-        $response->assertJsonFragment(FolderResource::make($folder)->jsonSerialize());
+        $response->assertJsonResource(FolderResource::make($folder));
     }
 
     public function testDeleteFolder()
     {
         $folder = factory(Folder::class)->create();
 
-        $response = $this->delete('/api/folders/' . $folder->id);
+        $response = $this->delete(route('folders.destroy', [$folder->id]));
 
         $response->assertStatus(204);
     }

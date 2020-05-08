@@ -14,6 +14,7 @@ use Tests\TestCase;
 
 class PageControllerTest extends TestCase
 {
+    use RefreshDatabase;
     use WithFaker;
 
     public function testGetAll()
@@ -27,12 +28,7 @@ class PageControllerTest extends TestCase
             'sort' => 'desc'
         ];
 
-        $queryString = implode(
-            '&',
-            array_map(fn($k, $v) => "$k=$v", array_keys($params), array_values($params))
-        );
-
-        $response = $this->get("/api/pages?$queryString");
+        $response = $this->get(route('pages.index', $params));
         $response->assertStatus(200);
 
         $responsePages = $pages
@@ -40,7 +36,7 @@ class PageControllerTest extends TestCase
             ->all();
 
         foreach ($responsePages as $page) {
-            $response->assertJsonFragment(PageListResource::make($page)->jsonSerialize());
+            $response->assertJsonResourceFragment(PageListResource::make($page));
         }
     }
 
@@ -53,9 +49,13 @@ class PageControllerTest extends TestCase
             'folder_id' => optional(Folder::query()->inRandomOrder()->first())->id
         ];
 
-        $response = $this->post('/api/pages', $payload);
+        $response = $this->post(route('pages.store'), $payload);
+
+        $page = Page::query()->firstWhere($payload);
+        $this->assertNotNull($page);
 
         $response->assertStatus(201);
+        $response->assertJsonResource(PageResource::make($page));
     }
 
     public function testShowPage()
@@ -63,10 +63,10 @@ class PageControllerTest extends TestCase
         $folders = factory(Folder::class, 20)->create();
         $page = factory(Page::class)->create();
 
-        $response = $this->get("/api/pages/{$page->id}");
+        $response = $this->get(route('pages.show', [$page->id]));
 
         $response->assertStatus(200);
-        $response->assertJsonFragment(PageResource::make($page)->jsonSerialize());
+        $response->assertJsonResource(PageResource::make($page));
     }
 
     public function testUpdatePage()
@@ -80,7 +80,7 @@ class PageControllerTest extends TestCase
             'folder_id' => optional(Folder::query()->inRandomOrder()->first())->id
         ];
 
-        $response = $this->put("/api/pages/{$page->id}", $payload);
+        $response = $this->put(route('pages.update', [$page->id]), $payload);
 
         $response->assertStatus(200);
 
@@ -89,14 +89,14 @@ class PageControllerTest extends TestCase
         if ($page->isDirty('content')) {
             $page->published = false;
         }
-        $response->assertJsonFragment(PageResource::make($page)->jsonSerialize());
+        $response->assertJsonResource(PageResource::make($page));
     }
 
     public function testDeletePage()
     {
         $page = factory(Page::class)->create();
 
-        $response = $this->delete("/api/pages/{$page->id}");
+        $response = $this->delete(route('pages.destroy', [$page->id]));
 
         $response->assertStatus(204);
     }
@@ -108,9 +108,26 @@ class PageControllerTest extends TestCase
         $folders = factory(Folder::class, 20)->create();
         $page = factory(Page::class)->create();
 
-        $response = $this->post("/api/pages/{$page->id}/publish");
+        $response = $this->post(route('pages.publish', [$page->id]));
+
+        $page->published = true;
 
         $response->assertStatus(200);
+        $response->assertJsonResource(PageResource::make($page));
+    }
+
+    public function testPublishPageAlreadyPublished()
+    {
+        Storage::fake('public');
+
+        $folders = factory(Folder::class, 20)->create();
+        $page = factory(Page::class)->create([
+            'published' => true
+        ]);
+
+        $response = $this->post(route('pages.publish', [$page->id]));
+
+        $response->assertStatus(404);
     }
 
     public function testPublishPageWithoutContent()
@@ -120,7 +137,7 @@ class PageControllerTest extends TestCase
         $folders = factory(Folder::class, 20)->create();
         $page = factory(Page::class)->create(['content' => null]);
 
-        $response = $this->post("/api/pages/{$page->id}/publish");
+        $response = $this->post(route('pages.publish', [$page->id]));
 
         $this->assertEquals(400, $response->exception->getCode());
     }
